@@ -83,6 +83,8 @@ public struct DataTableConfiguration: Equatable {
 
     public var sortArrowTintColor: UIColor = UIColor.blue
     
+    public var searchInColumns: [String] = []
+    
     public var shouldSupportRightToLeftInterfaceDirection: Bool = true
     
     public var highlightedAlternatingRowColors = [
