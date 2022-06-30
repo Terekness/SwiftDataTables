@@ -748,16 +748,20 @@ extension SwiftDataTable: UISearchBarDelegate {
         let needle = needle.lowercased()
         Array(0..<originalArray.count).forEach{
             let row = originalArray[$0]
-            //Add some sort of index array so we use that to iterate through the columns
-            //The idnex array will be defined by the column definition inside the configuration object provided by the user
-            //Index array might look like this [1, 3, 4]. Which means only those columns should be searched into
+            
+            var columnIndex = 0
+            
             for item in row {
-                let stringData: String = item.data.stringRepresentation.lowercased()
-                if stringData.lowercased().range(of: needle) != nil{
-                    filteredSet.append(row)
-                    //Stop searching through the rest of the columns in the same row and break
-                    break;
+                if self.options.searchInColumns.contains(self.dataStructure.headerTitles[columnIndex]) {
+                    let stringData: String = item.data.stringRepresentation.lowercased()
+                    if stringData.lowercased().range(of: needle) != nil{
+                        filteredSet.append(row)
+                        //Stop searching through the rest of the columns in the same row and break
+                        break;
+                    }
                 }
+                
+                columnIndex += 1
             }
         }
         
