@@ -43,7 +43,6 @@ public class SwiftDataTable: UIView {
     
     var options: DataTableConfiguration
     
-    //MARK: - Private Properties
     var currentRowViewModels: DataTableViewModelContent {
         get {
             return self.searchRowViewModels
@@ -121,37 +120,8 @@ public class SwiftDataTable: UIView {
     fileprivate var menuLengthViewModel: MenuLengthHeaderViewModel!
     fileprivate var columnWidths = [CGFloat]()
     
+    fileprivate var filters = [String]()
     
-    //    fileprivate var refreshControl: UIRefreshControl! = {
-    //        let refreshControl = UIRefreshControl()
-    //        refreshControl.attributedTitle = NSAttributedString(string: "Pull to refresh")
-    //        refreshControl.addTarget(self,
-    //                                 action: #selector(refreshOptions(sender:)),
-    //                                 for: .valueChanged)
-    //        return refreshControl
-    //    }()
-    
-    //    //MARK: - Events
-    //    var refreshEvent: (() -> Void)? = nil {
-    //        didSet {
-    //            if refreshEvent != nil {
-    //                self.collectionView.refreshControl = self.refreshControl
-    //            }
-    //            else {
-    //                self.refreshControl = nil
-    //                self.collectionView.refreshControl = nil
-    //            }
-    //        }
-    //    }
-    
-    //    var showRefreshControl: Bool {
-    //        didSet {
-    //            if
-    //            self.refreshControl
-    //        }
-    //    }
-    
-    //MARK: - Lifecycle
     public init(dataSource: SwiftDataTableDataSource,
                 options: DataTableConfiguration? = DataTableConfiguration(),
                 frame: CGRect = .zero){
@@ -172,9 +142,8 @@ public class SwiftDataTable: UIView {
         super.init(frame: frame)
         self.set(data: data, headerTitles: headerTitles, options: options, shouldReplaceLayout: true)
         self.registerObservers()
-        
-        
     }
+    
     public convenience init(data: [[String]],
                             headerTitles: [String],
                             options: DataTableConfiguration = DataTableConfiguration(),
@@ -241,7 +210,6 @@ public class SwiftDataTable: UIView {
     }
     
     func calculateColumnWidths(){
-        //calculate the automatic widths for each column
         self.columnWidths.removeAll()
         for columnIndex in Array(0..<self.numberOfHeaderColumns()) {
             self.columnWidths.append(self.automaticWidthForColumn(index: columnIndex))
@@ -338,7 +306,6 @@ public extension SwiftDataTable {
         }
         
         //2. Create the view models
-        //let viewModels: DataTableViewModelContent =
         self.rowViewModels = dataStructure.data.map{ currentRowData in
             return currentRowData.map {
                 return DataCellViewModel(data: $0)
@@ -346,20 +313,7 @@ public extension SwiftDataTable {
         }
         self.paginationViewModel = PaginationHeaderViewModel()
         self.menuLengthViewModel = MenuLengthHeaderViewModel()
-        //        self.bindViewToModels()
     }
-    
-    //    //MARK: - Events
-    //    private func bindViewToModels(){
-    //        self.menuLengthViewModel.searchTextFieldDidChangeEvent = { [weak self] text in
-    //            self?.searchTextEntryDidChange(text)
-    //        }
-    //    }
-    //
-    //    private func searchTextEntryDidChange(_ text: String){
-    //        //call delegate function
-    //        self.executeSearch(text)
-    //    }
 }
 
 
@@ -373,20 +327,12 @@ extension SwiftDataTable: UICollectionViewDataSource, UICollectionViewDelegate {
     }
     
     public func numberOfSections(in collectionView: UICollectionView) -> Int {
-        //if let dataSource = self.dataSource {
-        //    return dataSource.numberOfRows(in: self)
-        //}
         return self.numberOfRows()
     }
     
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cellViewModel: DataCellViewModel
-        //if let dataSource = self.dataSource {
-        //    cellViewModel = dataSource.dataTable(self, dataForRowAt: indexPath.row)
-        //}
-        //else {
         cellViewModel = self.rowModel(at: indexPath)
-        //}
         let cell = cellViewModel.dequeueCell(collectionView: collectionView, indexPath: indexPath)
         return cell
     }
@@ -645,14 +591,9 @@ extension SwiftDataTable {
     
     
     func widthForColumn(index: Int) -> CGFloat {
-        //May need to call calculateColumnWidths.. I want to deprecate it..
         guard let width = self.delegate?.dataTable?(self, widthForColumnAt: index) else {
             return self.columnWidths[index]
         }
-        //TODO: Implement it so that the preferred column widths are calculated first, and then the scaling happens after to fill the frame.
-//        if width != SwiftDataTableAutomaticColumnWidth {
-//            self.columnWidths[index] = width
-//        }
         return width
     }
     
@@ -687,7 +628,7 @@ extension SwiftDataTable {
     func automaticWidthForColumn(index: Int) -> CGFloat {
         let columnAverage: CGFloat = CGFloat(dataStructure.averageDataLengthForColumn(index: index))
         let sortingArrowVisualElementWidth: CGFloat = 10 // This is ugly
-      let averageDataColumnWidth: CGFloat = columnAverage + sortingArrowVisualElementWidth + (DataCell.Properties.horizontalMargin * 2)
+        let averageDataColumnWidth: CGFloat = columnAverage + sortingArrowVisualElementWidth + (DataCell.Properties.horizontalMargin * 2)
         return max(averageDataColumnWidth, max(self.minimumColumnWidth(), self.minimumHeaderColumnWidth(index: index)))
     }
     
@@ -701,7 +642,7 @@ extension SwiftDataTable {
     }
     
     func minimumHeaderColumnWidth(index: Int) -> CGFloat {
-      return CGFloat(self.dataStructure.headerTitles[index].widthOfString(usingFont: UIFont.boldSystemFont(ofSize: UIFont.labelFontSize)))
+        return CGFloat(self.dataStructure.headerTitles[index].widthOfString(usingFont: UIFont.systemFont(ofSize: UIFont.labelFontSize)))
     }
     
     func heightForPaginationView() -> CGFloat {
@@ -723,7 +664,7 @@ extension SwiftDataTable {
 //MARK: - Search Bar Delegate
 extension SwiftDataTable: UISearchBarDelegate {
     public func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-        self.executeSearch(searchText)
+        self.executeSearch()
     }
     
     public func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
@@ -754,7 +695,7 @@ extension SwiftDataTable: UISearchBarDelegate {
             for item in row {
                 if self.options.searchInColumns.contains(self.dataStructure.headerTitles[columnIndex]) {
                     let stringData: String = item.data.stringRepresentation.lowercased()
-                    if stringData.lowercased().range(of: needle) != nil{
+                    if stringData.lowercased().range(of: needle) != nil {
                         filteredSet.append(row)
                         //Stop searching through the rest of the columns in the same row and break
                         break;
@@ -768,25 +709,49 @@ extension SwiftDataTable: UISearchBarDelegate {
         return filteredSet
     }
     
+    public func applyAdditionalFilter(_ needle: String) {
+        if !self.filters.contains(needle) {
+            self.filters.append(needle)
+        }
+    }
     
-    fileprivate func executeSearch(_ needle: String){
+    public func applySingleFilter(_ needle: String) {
+        self.filters.removeAll()
+        self.filters.append(needle)
+        
+        self.executeSearch()
+    }
+    
+    public func removeFilter(_ needle: String) {
+        if let index = self.filters.firstIndex(of: needle) {
+            self.filters.remove(at: index)
+        }
+        self.executeSearch()
+    }
+    
+    public func removeAllFilters() {
+        self.filters.removeAll()
+        self.executeSearch()
+    }
+    
+    public func executeSearch(){
         let oldFilteredRowViewModels = self.searchRowViewModels!
         
-        if needle.isEmpty {
-            //DONT DELETE ORIGINAL CACHE FOR LAYOUTATTRIBUTES
-            //MAYBE KEEP TWO COPIES.. ONE FOR SEARCH AND ONE FOR DEFAULT
-            self.searchRowViewModels = self.rowViewModels
+        if let text = searchBar.text, !text.isEmpty {
+            self.searchRowViewModels = self.filteredResults(with: text, on: self.rowViewModels)
         }
         else {
-            self.searchRowViewModels = self.filteredResults(with: needle, on: self.rowViewModels)
-            //            print("needle: \(needle), rows found: \(self.searchRowViewModels!.count)")
+            self.searchRowViewModels = self.rowViewModels
         }
+
+        for filter in self.filters {
+            self.searchRowViewModels = self.filteredResults(with: filter, on: self.searchRowViewModels)
+        }
+        
         self.layout?.clearLayoutCache()
-        //        self.collectionView.scrollToItem(at: IndexPath(0), at: UICollectionViewScrollPosition.top, animated: false)
-        //So the header view doesn't flash when user is at the bottom of the collectionview and a search result is returned that doesn't feel the screen.
+
         self.collectionView.resetScrollPositionToTop()
         self.differenceSorter(oldRows: oldFilteredRowViewModels, filteredRows: self.searchRowViewModels)
-        
     }
     
     private func differenceSorter(
@@ -794,39 +759,39 @@ extension SwiftDataTable: UISearchBarDelegate {
         filteredRows: DataTableViewModelContent,
         animations: Bool = false,
         completion: ((Bool) -> Void)? = nil){
-        if animations == false {
-            UIView.setAnimationsEnabled(false)
-        }
-        self.collectionView.performBatchUpdates({
-            //finding the differences
-            
-            //The currently displayed rows - in this case named old rows - is scanned over.. deleting any entries that are not existing in the newly created filtered list.
-            for (oldIndex, oldRowViewModel) in oldRows.enumerated() {
-                let index = self.searchRowViewModels.firstIndex { rowViewModel in
-                    return oldRowViewModel == rowViewModel
-                }
-                if index == nil {
-                    self.collectionView.deleteSections([oldIndex])
-                }
-            }
-            
-            //Iterates over the new search results and compares them with the current result set displayed - in this case name old - inserting any entries that are not existant in the currently displayed result set
-            for (currentIndex, currentRolwViewModel) in filteredRows.enumerated() {
-                let oldIndex = oldRows.firstIndex { oldRowViewModel in
-                    return currentRolwViewModel == oldRowViewModel
-                }
-                if oldIndex == nil {
-                    self.collectionView.insertSections([currentIndex])
-                }
-            }
-        }, completion: { finished in
-            self.collectionView.reloadItems(at: self.collectionView.indexPathsForVisibleItems)
             if animations == false {
-                UIView.setAnimationsEnabled(true)
+                UIView.setAnimationsEnabled(false)
             }
-            completion?(finished)
-        })
-    }
+            self.collectionView.performBatchUpdates({
+                //finding the differences
+                
+                //The currently displayed rows - in this case named old rows - is scanned over.. deleting any entries that are not existing in the newly created filtered list.
+                for (oldIndex, oldRowViewModel) in oldRows.enumerated() {
+                    let index = self.searchRowViewModels.firstIndex { rowViewModel in
+                        return oldRowViewModel == rowViewModel
+                    }
+                    if index == nil {
+                        self.collectionView.deleteSections([oldIndex])
+                    }
+                }
+                
+                //Iterates over the new search results and compares them with the current result set displayed - in this case name old - inserting any entries that are not existant in the currently displayed result set
+                for (currentIndex, currentRolwViewModel) in filteredRows.enumerated() {
+                    let oldIndex = oldRows.firstIndex { oldRowViewModel in
+                        return currentRolwViewModel == oldRowViewModel
+                    }
+                    if oldIndex == nil {
+                        self.collectionView.insertSections([currentIndex])
+                    }
+                }
+            }, completion: { finished in
+                self.collectionView.reloadItems(at: self.collectionView.indexPathsForVisibleItems)
+                if animations == false {
+                    UIView.setAnimationsEnabled(true)
+                }
+                completion?(finished)
+            })
+        }
 }
 
 
