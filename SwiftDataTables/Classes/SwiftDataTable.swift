@@ -37,6 +37,8 @@ public class SwiftDataTable: UIView {
     public weak var dataSource: SwiftDataTableDataSource?
     public weak var delegate: SwiftDataTableDelegate?
     
+    fileprivate var lastTappedColumnIndex: Int?
+    
     public var rows: DataTableViewModelContent {
         return self.currentRowViewModels
     }
@@ -477,10 +479,20 @@ extension SwiftDataTable {
             self.update()
         }
         let index = index.index
+        
+        lastTappedColumnIndex = index
+        
         self.toggleSortArrows(column: index)
         self.highlight(column: index)
         let sortType = self.headerViewModels[index].sortType
         self.sort(column: index, sort: sortType)
+    }
+    
+    func resetColumnSort() {
+        if let index = lastTappedColumnIndex {
+            let sortType = self.headerViewModels[index].sortType
+            self.sort(column: index, sort: sortType)
+        }
     }
     
     func sort(column index: Int, sort by: DataTableSortType){
@@ -493,9 +505,9 @@ extension SwiftDataTable {
         
         switch by {
         case .ascending:
-            self.currentRowViewModels = self.currentRowViewModels.sorted(by: ascendingOrder)
+                self.currentRowViewModels = self.currentRowViewModels.sorted(by: ascendingOrder)
         case .descending:
-            self.currentRowViewModels = self.currentRowViewModels.sorted(by: descendingOrder)
+                self.currentRowViewModels = self.currentRowViewModels.sorted(by: descendingOrder)
         default:
             break
         }
@@ -510,7 +522,7 @@ extension SwiftDataTable {
     
     func applyColumnOrder(_ columnOrder: DataTableColumnOrder){
         Array(0..<self.headerViewModels.count).forEach {
-            if columnOrder.index == $0 {
+            if $0 == columnOrder.index {
                 self.headerViewModels[$0].sortType = columnOrder.order
             }
             else {
@@ -521,14 +533,19 @@ extension SwiftDataTable {
     
     func toggleSortArrows(column: Int){
         Array(0..<self.headerViewModels.count).forEach {
-            if column == $0 {
+            if $0 == column {
                 self.headerViewModels[$0].sortType.toggle()
             }
             else {
                 self.headerViewModels[$0].sortType.toggleToDefault()
             }
         }
-        //        self.headerViewModels.forEach { print($0.sortType) }
+    }
+    
+    func untoggleSortArrows() {
+        Array(0..<self.headerViewModels.count).forEach {
+            self.headerViewModels[$0].sortType = DataTableSortType.unspecified
+        }
     }
     
     //This is actually mapped to sections
@@ -701,7 +718,6 @@ extension SwiftDataTable: UISearchBarDelegate {
                         break;
                     }
                 }
-                
                 columnIndex += 1
             }
         }
@@ -718,8 +734,8 @@ extension SwiftDataTable: UISearchBarDelegate {
     public func applySingleFilter(_ needle: String) {
         self.filters.removeAll()
         self.filters.append(needle)
-        
         self.executeSearch()
+        self.resetColumnSort()
     }
     
     public func removeFilter(_ needle: String) {
@@ -732,6 +748,7 @@ extension SwiftDataTable: UISearchBarDelegate {
     public func removeAllFilters() {
         self.filters.removeAll()
         self.executeSearch()
+        self.resetColumnSort()
     }
     
     public func executeSearch(){
@@ -743,13 +760,13 @@ extension SwiftDataTable: UISearchBarDelegate {
         else {
             self.searchRowViewModels = self.rowViewModels
         }
-
+        
         for filter in self.filters {
             self.searchRowViewModels = self.filteredResults(with: filter, on: self.searchRowViewModels)
         }
         
         self.layout?.clearLayoutCache()
-
+        
         self.collectionView.resetScrollPositionToTop()
         self.differenceSorter(oldRows: oldFilteredRowViewModels, filteredRows: self.searchRowViewModels)
     }
