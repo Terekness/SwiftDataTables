@@ -59,6 +59,7 @@ public class SwiftDataTable: UIView {
         searchBar.searchBarStyle = .minimal;
         searchBar.placeholder = "Search";
         searchBar.delegate = self
+        
         if #available(iOS 13.0, *) {
             searchBar.backgroundColor = .systemBackground
             searchBar.barTintColor = .label
@@ -66,7 +67,6 @@ public class SwiftDataTable: UIView {
             searchBar.backgroundColor = .white
             searchBar.barTintColor = .white
         }
-        
         
         self.addSubview(searchBar)
         return searchBar
@@ -358,6 +358,15 @@ extension SwiftDataTable: UICollectionViewDataSource, UICollectionViewDelegate {
         case .paginationHeader:
             view.backgroundColor = UIColor.darkGray
         default:
+            
+            if options.addBottomBorder {
+                let border = UIView()
+                border.backgroundColor = UIColor(red: 75.0/255.0, green:93.0/255.0, blue:111.0/255.0, alpha:0.5)
+                border.autoresizingMask = [.flexibleWidth, .flexibleTopMargin]
+                border.frame = CGRect(x: 0, y: view.frame.size.height - 1, width: view.frame.size.width, height: 1)
+                view.addSubview(border)
+            }
+            
             if #available(iOS 13.0, *) {
                 view.backgroundColor = .systemBackground
             } else {
@@ -505,9 +514,9 @@ extension SwiftDataTable {
         
         switch by {
         case .ascending:
-                self.currentRowViewModels = self.currentRowViewModels.sorted(by: ascendingOrder)
+            self.currentRowViewModels = self.currentRowViewModels.sorted(by: ascendingOrder)
         case .descending:
-                self.currentRowViewModels = self.currentRowViewModels.sorted(by: descendingOrder)
+            self.currentRowViewModels = self.currentRowViewModels.sorted(by: descendingOrder)
         default:
             break
         }
@@ -728,25 +737,29 @@ extension SwiftDataTable: UISearchBarDelegate {
     public func applyAdditionalFilter(_ needle: String) {
         if !self.filters.contains(needle) {
             self.filters.append(needle)
+            self.continueAfterFilter()
         }
     }
     
     public func applySingleFilter(_ needle: String) {
         self.filters.removeAll()
         self.filters.append(needle)
-        self.executeSearch()
-        self.resetColumnSort()
+        self.continueAfterFilter()
     }
     
     public func removeFilter(_ needle: String) {
         if let index = self.filters.firstIndex(of: needle) {
             self.filters.remove(at: index)
+            self.continueAfterFilter()
         }
-        self.executeSearch()
     }
     
     public func removeAllFilters() {
         self.filters.removeAll()
+        self.continueAfterFilter()
+    }
+    
+    private func continueAfterFilter() {
         self.executeSearch()
         self.resetColumnSort()
     }
