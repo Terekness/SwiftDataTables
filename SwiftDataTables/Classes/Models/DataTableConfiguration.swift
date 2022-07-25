@@ -85,6 +85,8 @@ public struct DataTableConfiguration: Equatable {
     
     public var searchInColumns: [String] = []
     
+    public var addBottomBorder: Bool = false
+    
     public var shouldSupportRightToLeftInterfaceDirection: Bool = true
     
     public var highlightedAlternatingRowColors = [
