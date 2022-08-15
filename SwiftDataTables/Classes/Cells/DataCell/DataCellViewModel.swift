@@ -17,6 +17,7 @@ open class DataCellViewModel: VirtualPositionTrackable, CollectionViewCellRepres
     var virtualHeight: CGFloat = 0
     public let data: DataTableValueType
     var highlighted: Bool = false
+    var fontColor: UIColor = .black
     //
     public var stringRepresentation: String {
         return self.data.stringRepresentation
