@@ -306,13 +306,22 @@ public extension SwiftDataTable {
             )
             return headerViewModel
         }
-        
+
         //2. Create the view models
         self.rowViewModels = dataStructure.data.map{ currentRowData in
             return currentRowData.map {
                 return DataCellViewModel(data: $0)
             }
         }
+        
+        for rowViewModel in self.rowViewModels {
+            for (index, col) in rowViewModel.enumerated() {
+                if index < options.fontColors.count {
+                    col.fontColor = options.fontColors[index]
+                }
+            }
+        }
+        
         self.paginationViewModel = PaginationHeaderViewModel()
         self.menuLengthViewModel = MenuLengthHeaderViewModel()
     }
