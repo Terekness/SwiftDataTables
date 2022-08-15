@@ -87,6 +87,8 @@ public struct DataTableConfiguration: Equatable {
     
     public var addBottomBorder: Bool = false
     
+    public var fontColors: [UIColor] = []
+    
     public var shouldSupportRightToLeftInterfaceDirection: Bool = true
     
     public var highlightedAlternatingRowColors = [
