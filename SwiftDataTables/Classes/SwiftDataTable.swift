@@ -275,6 +275,9 @@ public class SwiftDataTable: UIView {
         self.collectionView.resetScrollPositionToTop()
         self.set(data: data, headerTitles: headerTitles, options: self.options)
         self.collectionView.reloadData()
+        self.searchBar.text = ""
+        self.searchBar.setShowsCancelButton(false, animated: true)
+        self.searchBar.resignFirstResponder()
     }
     
     public func data(for indexPath: IndexPath) -> DataTableValueType {
